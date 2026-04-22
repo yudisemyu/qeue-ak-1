@@ -35,19 +35,28 @@ export default function StatusAntrian() {
       if (!queueData?.nik) return;
 
       try {
-        // 1. Cek antrean yang sedang dilayani di loket
-        const resCurrent = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/queues/current`);
-        const dataCurrent = await resCurrent.json();
-        setCurrentServing(dataCurrent.data?.nomor_antrian || null);
-
-        // 2. Cek status terbaru milik user ini sendiri (menggunakan NIK)
-        const resMe = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/queues?nik=${queueData.nik}`);
-        const dataMe = await resMe.json();
+        // 1. Cek antrean yang sedang dilayani di loket (TAMBAHKAN HEADER ACCEPT & CEK RES.OK)
+        const resCurrent = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/queues/current`, {
+          headers: { "Accept": "application/json" }
+        });
         
-        // Cari data milik user di antara daftar antrean hari ini
-        const myLatestData = dataMe.find((q: any) => q.nik === queueData.nik);
-        if (myLatestData) {
-          setQueueData(myLatestData);
+        if (resCurrent.ok) {
+          const dataCurrent = await resCurrent.json();
+          setCurrentServing(dataCurrent.data?.nomor_antrian || null);
+        }
+
+        // 2. Cek status terbaru milik user ini sendiri
+        const resMe = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/queues?nik=${queueData.nik}`, {
+          headers: { "Accept": "application/json" }
+        });
+        
+        if (resMe.ok) {
+          const dataMe = await resMe.json();
+          // Cari data milik user di antara daftar antrean hari ini
+          const myLatestData = dataMe.find((q: any) => q.nik === queueData.nik);
+          if (myLatestData) {
+            setQueueData(myLatestData);
+          }
         }
       } catch (error) {
         console.error("Error refreshing data:", error);

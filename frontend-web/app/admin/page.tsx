@@ -18,7 +18,22 @@ export default function AdminDashboard() {
 
   const fetchQueues = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/queues`);
+      const token = localStorage.getItem("admin_token"); 
+      
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/queues`, {
+        method: "GET",
+        headers: {
+          "Accept": "application/json",
+          "Authorization": `Bearer ${token}`, 
+        }
+      });
+
+      if (response.status === 401) {
+        localStorage.removeItem("admin_token");
+        router.push("/login");
+        return;
+      }
+
       const data = await response.json();
       setQueues(data);
     } catch (error) {
@@ -34,11 +49,23 @@ export default function AdminDashboard() {
 
   const updateStatus = async (id: number, newStatus: string) => {
     try {
+      const token = localStorage.getItem("admin_token"); 
+      
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/queues/${id}/status`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+          "Authorization": `Bearer ${token}`, 
+        },
         body: JSON.stringify({ status: newStatus }),
       });
+
+      if (response.status === 401) {
+        localStorage.removeItem("admin_token");
+        router.push("/login");
+        return;
+      }
 
       if (response.ok) {
         fetchQueues();
@@ -50,7 +77,7 @@ export default function AdminDashboard() {
 
   const panggilSuara = (nomor: number, nama: string) => {
     if ('speechSynthesis' in window) {
-      const teks = `Nomor antrean, ${nomor}, atas nama, ${nama}, silakan menuju operator cetak yang kosong.`;
+      const teks = `Nomor antrean, ${nomor}, atas nama, ${nama}, silakan menuju loket cetak yang kosong.`;
       const speech = new SpeechSynthesisUtterance(teks);
       speech.lang = 'id-ID'; 
       speech.rate = 0.85;    
@@ -66,37 +93,67 @@ export default function AdminDashboard() {
     panggilSuara(nomor, nama);
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("admin_token");
-    router.push("/login");
+  // PENYEMPURNAAN LOGOUT (Menghancurkan token di Backend)
+  const handleLogout = async () => {
+    try {
+      const token = localStorage.getItem("admin_token");
+      if (token) {
+        await fetch(`${process.env.NEXT_PUBLIC_API_URL}/logout`, {
+          method: "POST",
+          headers: {
+            "Accept": "application/json",
+            "Authorization": `Bearer ${token}`
+          }
+        });
+      }
+    } catch (error) {
+      console.error("Gagal logout dari server", error);
+    } finally {
+      localStorage.removeItem("admin_token");
+      router.push("/login");
+    }
   };
 
-  // Menghitung Statistik Ringan
   const totalAntrean = queues.length;
   const sisaAntrean = queues.filter(q => q.status === 'waiting').length;
   const selesaiAntrean = queues.filter(q => q.status === 'completed').length;
 
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-800 selection:bg-indigo-100">
+    <main className="min-h-screen bg-slate-50 text-slate-800 selection:bg-emerald-100">
       
-      {/* Top Navigation Bar */}
-      <nav className="bg-white border-b border-slate-200 px-8 py-4 flex justify-between items-center sticky top-0 z-10">
-        <div>
-          <h1 className="text-xl font-bold tracking-tight text-slate-900">Panel Admin AK-1</h1>
-          <p className="text-xs text-slate-500 mt-0.5">Dinas Tenaga Kerja</p>
-        </div>
+      {/* Top Navigation Bar - Versi Dark Emerald */}
+      <nav className="bg-gradient-to-r from-emerald-950 to-emerald-900 border-b border-emerald-800 px-6 py-4 flex justify-between items-center sticky top-0 z-20 shadow-lg">
         <div className="flex items-center gap-4">
+          {/* Logo dengan filter agar lebih menyatu dengan background gelap */}
+          <img 
+            src="/logo-dinas-fix.png" 
+            alt="Logo Dinas" 
+            className="w-12 h-12 object-contain brightness-110 contrast-125"
+          />
+          <div>
+            <h1 className="text-xl font-black tracking-tight text-white">Panel Admin AK-1</h1>
+            <p className="text-xs font-bold text-emerald-400 uppercase tracking-widest">Layanan Cetak Kartu Kuning</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3">
           <button 
             onClick={fetchQueues}
-            className="text-sm font-medium text-slate-600 bg-slate-100 px-4 py-2 rounded-lg hover:bg-slate-200 transition-colors"
+            className="text-xs font-extrabold text-emerald-100 bg-emerald-800/50 px-4 py-2.5 rounded-xl hover:bg-emerald-800 transition-all border border-emerald-700/50 flex items-center gap-2 shadow-inner"
           >
-            Segarkan Data
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+            </svg>
+            REFRESH
           </button>
+          
+          <div className="h-8 w-[1px] bg-emerald-800 mx-2"></div>
+
           <button 
             onClick={handleLogout}
-            className="text-sm font-medium text-red-600 bg-red-50 px-4 py-2 rounded-lg hover:bg-red-100 transition-colors"
+            className="text-xs font-extrabold text-white bg-red-600/90 px-5 py-2.5 rounded-xl hover:bg-red-700 transition-all shadow-md active:scale-95 border border-red-500/50"
           >
-            Keluar
+            KELUAR
           </button>
         </div>
       </nav>
@@ -105,17 +162,17 @@ export default function AdminDashboard() {
         
         {/* Statistik / Widget Ringkasan */}
         <div className="grid grid-cols-3 gap-6 mb-8">
-          <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex flex-col justify-center">
-            <p className="text-sm font-medium text-slate-500 mb-1">Total Pendaftar Hari Ini</p>
-            <p className="text-4xl font-semibold text-slate-800">{totalAntrean}</p>
+          <div className="bg-white p-6 rounded-2xl border-l-4 border-l-slate-400 border-y border-r border-slate-100 shadow-sm flex flex-col justify-center">
+            <p className="text-sm font-bold text-slate-500 mb-1">Total Pendaftar Hari Ini</p>
+            <p className="text-4xl font-black text-slate-800">{totalAntrean}</p>
           </div>
-          <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex flex-col justify-center">
-            <p className="text-sm font-medium text-amber-500 mb-1">Menunggu Panggilan</p>
-            <p className="text-4xl font-semibold text-amber-600">{sisaAntrean}</p>
+          <div className="bg-white p-6 rounded-2xl border-l-4 border-l-amber-400 border-y border-r border-slate-100 shadow-sm flex flex-col justify-center">
+            <p className="text-sm font-bold text-amber-500 mb-1">Menunggu Panggilan</p>
+            <p className="text-4xl font-black text-amber-600">{sisaAntrean}</p>
           </div>
-          <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex flex-col justify-center">
-            <p className="text-sm font-medium text-emerald-500 mb-1">Pelayanan Selesai</p>
-            <p className="text-4xl font-semibold text-emerald-600">{selesaiAntrean}</p>
+          <div className="bg-white p-6 rounded-2xl border-l-4 border-l-emerald-500 border-y border-r border-slate-100 shadow-sm flex flex-col justify-center">
+            <p className="text-sm font-bold text-emerald-500 mb-1">Pelayanan Selesai</p>
+            <p className="text-4xl font-black text-emerald-600">{selesaiAntrean}</p>
           </div>
         </div>
 
@@ -124,32 +181,35 @@ export default function AdminDashboard() {
           <table className="w-full text-left border-collapse">
             <thead className="bg-slate-50/80 border-b border-slate-200">
               <tr>
-                <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest">No. Antrean</th>
-                <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Nama Pemohon</th>
-                <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Data NIK</th>
-                <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Status</th>
-                <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest text-right">Aksi Pelayanan</th>
+                <th className="px-6 py-4 text-[11px] font-extrabold text-slate-500 uppercase tracking-widest">No. Antrean</th>
+                <th className="px-6 py-4 text-[11px] font-extrabold text-slate-500 uppercase tracking-widest">Nama Pemohon</th>
+                <th className="px-6 py-4 text-[11px] font-extrabold text-slate-500 uppercase tracking-widest">Data NIK</th>
+                <th className="px-6 py-4 text-[11px] font-extrabold text-slate-500 uppercase tracking-widest">Status</th>
+                <th className="px-6 py-4 text-[11px] font-extrabold text-slate-500 uppercase tracking-widest text-right">Aksi Pelayanan</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {queues.map((q: any) => (
                 <tr 
                   key={q.id} 
-                  className={`hover:bg-slate-50/80 transition-colors group ${q.status === 'processing' ? 'bg-indigo-50/30' : ''}`}
+                  className={`hover:bg-slate-50 transition-colors group ${q.status === 'processing' ? 'bg-blue-50/40' : ''}`}
                 >
                   <td className="px-6 py-4">
-                    <span className="text-lg font-bold text-slate-700">{q.nomor_antrian}</span>
+                    <span className={`text-lg font-black ${q.status === 'processing' ? 'text-blue-700' : 'text-slate-700'}`}>
+                      {q.nomor_antrian}
+                    </span>
                   </td>
-                  <td className="px-6 py-4 font-medium text-slate-800">{q.nama}</td>
+                  <td className="px-6 py-4 font-bold text-slate-800">{q.nama}</td>
                   <td className="px-6 py-4 text-sm text-slate-500 font-mono tracking-wide">{q.nik}</td>
                   <td className="px-6 py-4">
-                    <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold
-                      ${q.status === 'waiting' ? 'bg-amber-100 text-amber-700' : 
-                        q.status === 'processing' ? 'bg-indigo-100 text-indigo-700 shadow-sm shadow-indigo-200' : 
-                        q.status === 'completed' ? 'bg-emerald-100 text-emerald-700' :
-                        'bg-slate-100 text-slate-600'}`}>
+                    <span className={`inline-flex items-center px-3 py-1.5 rounded-md text-xs font-extrabold uppercase tracking-wide
+                      ${q.status === 'waiting' ? 'bg-amber-100 text-amber-700 border border-amber-200' : 
+                        q.status === 'processing' ? 'bg-blue-100 text-blue-700 border border-blue-200 shadow-sm' : 
+                        q.status === 'completed' ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' :
+                        'bg-slate-100 text-slate-600 border border-slate-200'}`}>
+                      
                       {/* Indikator titik berkedip jika sedang diproses */}
-                      {q.status === 'processing' && <span className="w-1.5 h-1.5 bg-indigo-600 rounded-full mr-1.5 animate-pulse"></span>}
+                      {q.status === 'processing' && <span className="w-2 h-2 bg-blue-600 rounded-full mr-2 animate-pulse"></span>}
                       {q.status === 'waiting' ? 'Menunggu' : 
                        q.status === 'processing' ? 'Di Loket' : 
                        q.status === 'completed' ? 'Selesai' : 'Terlewati'}
@@ -160,7 +220,7 @@ export default function AdminDashboard() {
                       {q.status !== 'completed' && (
                         <button 
                           onClick={() => handlePanggil(q.id, q.nomor_antrian, q.nama)}
-                          className="bg-indigo-600 text-white text-xs font-semibold px-4 py-2 rounded-lg hover:bg-indigo-700 transition-all shadow-sm active:scale-95"
+                          className="bg-emerald-600 text-white text-xs font-bold px-4 py-2.5 rounded-lg hover:bg-emerald-700 transition-all shadow-sm active:scale-95"
                         >
                           Panggil
                         </button>
@@ -168,15 +228,15 @@ export default function AdminDashboard() {
                       {q.status === 'processing' && (
                         <button 
                           onClick={() => updateStatus(q.id, 'completed')}
-                          className="bg-emerald-500 text-white text-xs font-semibold px-4 py-2 rounded-lg hover:bg-emerald-600 transition-all shadow-sm active:scale-95"
+                          className="bg-blue-600 text-white text-xs font-bold px-4 py-2.5 rounded-lg hover:bg-blue-700 transition-all shadow-sm active:scale-95"
                         >
-                          Selesai
+                          Tandai Selesai
                         </button>
                       )}
-                      {q.status === 'waiting' || q.status === 'processing' && (
+                      {(q.status === 'waiting' || q.status === 'processing') && (
                         <button 
                           onClick={() => updateStatus(q.id, 'skipped')}
-                          className="bg-white border border-slate-200 text-slate-600 text-xs font-semibold px-4 py-2 rounded-lg hover:bg-slate-50 transition-all active:scale-95"
+                          className="bg-white border-2 border-slate-200 text-slate-600 text-xs font-bold px-4 py-2 rounded-lg hover:bg-slate-50 hover:border-slate-300 transition-all active:scale-95"
                         >
                           Lewati
                         </button>
@@ -189,11 +249,11 @@ export default function AdminDashboard() {
           </table>
           
           {queues.length === 0 && !loading && (
-             <div className="flex flex-col items-center justify-center py-20 text-slate-400">
-               <svg className="w-12 h-12 mb-4 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+             <div className="flex flex-col items-center justify-center py-20 text-slate-400 bg-slate-50/50">
+               <svg className="w-14 h-14 mb-4 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                </svg>
-               <p className="text-sm font-medium">Belum ada data antrean hari ini.</p>
+               <p className="text-sm font-bold">Belum ada data antrean hari ini.</p>
              </div>
           )}
         </div>
