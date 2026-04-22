@@ -8,11 +8,17 @@ export default function AdminDashboard() {
   const [queues, setQueues] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const [isChecking, setIsChecking] = useState(true); // State untuk proteksi halaman
+
   // Proteksi Halaman
   useEffect(() => {
     const token = localStorage.getItem("admin_token");
     if (!token) {
-      router.push("/login");
+      // Gunakan 'replace' agar user tidak bisa klik tombol "Back" di browser
+      router.replace("/login"); 
+    } else {
+      // Jika token ada, hentikan proses pengecekan dan izinkan render
+      setIsChecking(false);
     }
   }, [router]);
 
@@ -113,6 +119,15 @@ export default function AdminDashboard() {
       router.push("/login");
     }
   };
+
+  if (isChecking) {
+    // Tampilkan layar kosong bernuansa emerald saat sedang mengecek gembok
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+         <div className="w-10 h-10 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   const totalAntrean = queues.length;
   const sisaAntrean = queues.filter(q => q.status === 'waiting').length;

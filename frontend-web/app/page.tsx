@@ -9,6 +9,7 @@ export default function Home() {
   const [nama, setNama] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
+  const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
     const savedQueue = localStorage.getItem("my_queue");
@@ -157,22 +158,33 @@ export default function Home() {
                 className="block w-full text-sm text-slate-500 file:mr-4 file:py-3 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-emerald-100 file:text-emerald-800 hover:file:bg-emerald-200 transition-colors mb-6 cursor-pointer border border-slate-200 rounded-xl bg-white shadow-sm"
               />
 
-              <div className="pt-5 border-t border-slate-200">
-                <p className="text-xs font-bold text-slate-400 mb-3 uppercase tracking-widest text-center sm:text-left">Panduan Screenshot</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="relative rounded-xl border-2 border-emerald-500 overflow-hidden bg-white shadow-sm">
-                    <div className="absolute top-0 left-0 w-full bg-emerald-500 text-white text-[10px] py-1 text-center font-bold tracking-widest">BENAR</div>
-                    <div className="p-2 pt-8 flex items-center justify-center h-32 bg-emerald-50/30">
-                       <img src="/contoh-benar.png" alt="Contoh Benar" className="max-h-full object-contain" />
+              <div className="pt-6 border-t border-slate-200">
+                <p className="text-xs font-bold text-slate-500 mb-4 uppercase tracking-widest text-center">Contoh Screenshot yang Diterima</p>
+                
+                <div className="flex justify-center">
+                  <div 
+                    onClick={() => setShowModal(true)}
+                    className="relative rounded-xl border-2 border-emerald-500 overflow-hidden bg-white shadow-sm cursor-zoom-in hover:shadow-md transition-all group max-w-[180px]"
+                  >
+                    <div className="absolute top-0 left-0 w-full bg-emerald-500 text-white text-[10px] py-1 text-center font-extrabold tracking-widest uppercase z-10">
+                      CONTOH 
                     </div>
-                  </div>
-                  <div className="relative rounded-xl border-2 border-red-500 overflow-hidden bg-white shadow-sm grayscale">
-                    <div className="absolute top-0 left-0 w-full bg-red-500 text-white text-[10px] py-1 text-center font-bold tracking-widest">TIDAK SESUAI</div>
-                    <div className="p-2 pt-8 flex items-center justify-center h-32 bg-red-50/30">
-                       <img src="/contoh-salah.png" alt="Contoh Salah" className="max-h-full object-contain opacity-80" />
+                    {/* Efek Hover Kaca Pembesar */}
+                    <div className="relative p-2 pt-8 bg-emerald-50/30">
+                       <img 
+                          src="/contoh-benar.png" 
+                          alt="Preview Contoh" 
+                          className="w-full h-auto object-contain rounded group-hover:scale-105 transition-transform" 
+                       />
+                       <div className="absolute inset-0 bg-emerald-900/0 group-hover:bg-emerald-900/10 transition-colors flex items-center justify-center">
+                          <svg className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-md" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"></path></svg>
+                       </div>
                     </div>
                   </div>
                 </div>
+                <p className="mt-3 text-[11px] text-slate-500 font-medium text-center">
+                  * Klik gambar untuk melihat ukuran penuh
+                </p>
               </div>
             </div>
 
@@ -187,6 +199,41 @@ export default function Home() {
 
         </div>
       </div>
+      {showModal && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm transition-opacity"
+          onClick={() => setShowModal(false)}
+        >
+          {/* Hentikan klik agar tidak menutup saat gambar diklik */}
+          <div className="relative max-w-2xl w-full bg-white rounded-2xl p-2 shadow-2xl animate-in fade-in zoom-in duration-200" onClick={e => e.stopPropagation()}>
+            
+            {/* Tombol Silang (Close) */}
+            <div className="absolute -top-4 -right-4 bg-white rounded-full p-1 shadow-lg z-10">
+              <button 
+                type="button"
+                onClick={() => setShowModal(false)} 
+                className="bg-red-50 text-red-600 hover:bg-red-100 p-2 rounded-full transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+              </button>
+            </div>
+
+            <div className="bg-emerald-50 rounded-xl p-4">
+              <p className="text-center text-emerald-800 font-extrabold mb-3 text-sm border-b border-emerald-200 pb-2">
+                CONTOH SCREENSHOT YANG DITERIMA
+              </p>
+              <img 
+                src="/contoh-benar.png" 
+                alt="Contoh Benar Full Size" 
+                className="w-full h-auto max-h-[70vh] object-contain rounded" 
+              />
+              <p className="mt-3 text-xs text-emerald-700 font-bold text-center leading-relaxed">
+                 Pastikan NIK, Nama, dan seluruh informasi terbaca dengan jelas tanpa terpotong. 
+              </p>
+            </div>
+          </div>
+        </div>
+      )} 
     </div>
   );
 }

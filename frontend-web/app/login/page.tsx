@@ -74,8 +74,8 @@ export default function AdminLogin() {
                 type="email" 
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-600 outline-none transition-all bg-slate-50"
-                placeholder="admin@pemalangkab.go.id"
+                className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-600 outline-none transition-all bg-slate-50 text-slate-800 placeholder-slate-400 "
+                placeholder="blablabla@contoh.com"
                 required
               />
             </div>
@@ -85,7 +85,7 @@ export default function AdminLogin() {
                 type="password" 
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-600 outline-none transition-all bg-slate-50"
+                className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-600 outline-none transition-all bg-slate-50 text-slate-800 placeholder-slate-400"
                 placeholder="••••••••"
                 required
               />
